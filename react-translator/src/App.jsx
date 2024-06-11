@@ -1,33 +1,104 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import { useEffect, useRef, useState } from 'react'
+import LanguageSelector from './components/LanguageSelector';
+import Progress from './components/Progress';
 
 function App() {
-  const [count, setCount] = useState(0)
+  const worker = useRef(null);
+
+  const [ready, setReady] = useState(null);
+  const [disabled, setDisabled] = useState(false);
+  const [progressItems, setProgressItems] = useState([]);
+
+  const [input, setInput] = useState('Eu amo caminhar com meu cachorro.');
+  const [sourceLanguage, setSourceLanguage] = useState('por_Latn');
+  const [targetLanguage, setTargetLanguage] = useState('eng_Latn');
+  const [output, setOutput] = useState('');
+
+  useEffect(() => {
+    if (!worker.current) {
+      worker.current = new Worker(new URL('./worker.js', import.meta.url), {
+        type: 'module'
+      });
+    }
+
+    const onMessageReceived = (e) => {
+      switch (e.data.status) {
+        case 'initiate':
+          setReady(false);
+          setProgressItems(prev => [...prev, e.data]);
+        break;
+
+        case 'progress':
+          setProgressItems(
+            prev => prev.map(item => {
+              if (item.file === e.data.file){
+                return { ...item, progress: e.data.progress }
+              }
+              return item;
+            })
+          );
+        break;
+
+        case 'done':
+          setProgressItems(
+            prev => prev.filter(item => item.file !== e.data.file)
+          );
+        break;
+
+        case 'update':
+          setOutput(e.data.output);
+        break;
+
+        case 'complete':
+          setDisabled(false);
+        break;
+      }
+  };
+
+    worker.current.addEventListener('message', onMessageReceived);
+
+    return () => worker.current.removeEventListener('message', onMessageReceived);
+
+  });
+
+  const translate = () => {
+    setDisabled(true);
+    worker.current.postMessage({
+      text: input,
+      src_lang: sourceLanguage,
+      tgt_lang: targetLanguage,
+    });
+  }
 
   return (
     <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
+      <h1>Transformers.js</h1>
+      <h2>ML-powered multilingual translation in React!</h2>
+
+      <div className='container'>
+        <div className='linguagem-container'>
+          <LanguageSelector type={"Source"} defaultLanguage={"por_Latn"} onChange={x => setSourceLanguage(x.target.value)} />
+          <LanguageSelector type={"Target"} defaultLanguage={"eng_Latn"} onChange={x => setTargetLanguage(x.target.value)} />
+        </div>
+
+        <div className='textbox-container'>
+          <textarea value={input} rows={3} onChange={e => setInput(e.target.value)}></textarea>
+          <textarea value={output} rows={3} readOnly></textarea>
+        </div>
       </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
+
+      <button disabled={disabled} onClick={translate}>Translate</button>
+
+      <div className='progress-bars-container'>
+        {ready === false && (
+          <label>Loading models... (only run once)</label>
+        )}
+        {progressItems.map(data => (
+          <div key={data.file}>
+            <Progress text={data.file} percentage={data.progress} />
+          </div>
+        ))}
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
     </>
   )
 }
