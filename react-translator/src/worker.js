@@ -2,12 +2,12 @@ import { pipeline } from "@xenova/transformers";
 
 class MyTranslationPipeline {
     static task = 'translation';
-    static model = 'Xenova/nllb-200-distilled-600M'
+    static model = 'Xenova/nllb-200-distilled-600M';
     static instance = null;
 
-    static async getInstance(progress_callback = null){
-        if(this.instance === null){
-            this.instance = pipeline(this.task, this.model, { progress_callback })
+    static async getInstance(progress_callback = null) {
+        if (this.instance === null) {
+            this.instance = pipeline(this.task, this.model, { progress_callback });
         }
         return this.instance;
     }    
@@ -16,7 +16,7 @@ class MyTranslationPipeline {
 self.addEventListener('message', async (event) => {
     let translator = await MyTranslationPipeline.getInstance(x => {
         self.postMessage(x);
-    })
+    });
 
     let output = await translator(event.data.text, {
         tgt_lang: event.data.tgt_lang,
@@ -33,5 +33,5 @@ self.addEventListener('message', async (event) => {
     self.postMessage({
         status: 'complete',
         output: output,
-    })
+    });
 });

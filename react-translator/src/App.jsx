@@ -2,17 +2,19 @@ import { useEffect, useRef, useState } from 'react'
 import LanguageSelector from './components/LanguageSelector';
 import Progress from './components/Progress';
 
-function App() {
-  const worker = useRef(null);
+import './App.css'
 
+function App() {
   const [ready, setReady] = useState(null);
   const [disabled, setDisabled] = useState(false);
   const [progressItems, setProgressItems] = useState([]);
 
-  const [input, setInput] = useState('Eu amo caminhar com meu cachorro.');
-  const [sourceLanguage, setSourceLanguage] = useState('por_Latn');
-  const [targetLanguage, setTargetLanguage] = useState('eng_Latn');
+  const [input, setInput] = useState('I love walking my dog.');
+  const [sourceLanguage, setSourceLanguage] = useState('eng_Latn');
+  const [targetLanguage, setTargetLanguage] = useState('fra_Latn');
   const [output, setOutput] = useState('');
+
+  const worker = useRef(null);
 
   useEffect(() => {
     if (!worker.current) {
@@ -43,6 +45,10 @@ function App() {
           setProgressItems(
             prev => prev.filter(item => item.file !== e.data.file)
           );
+        break;
+
+        case 'ready':
+          setReady(true);
         break;
 
         case 'update':
@@ -76,9 +82,9 @@ function App() {
       <h2>ML-powered multilingual translation in React!</h2>
 
       <div className='container'>
-        <div className='linguagem-container'>
-          <LanguageSelector type={"Source"} defaultLanguage={"por_Latn"} onChange={x => setSourceLanguage(x.target.value)} />
-          <LanguageSelector type={"Target"} defaultLanguage={"eng_Latn"} onChange={x => setTargetLanguage(x.target.value)} />
+        <div className='language-container'>
+          <LanguageSelector type={"Source"} defaultLanguage={"eng_Latn"} onChange={x => setSourceLanguage(x.target.value)} />
+          <LanguageSelector type={"Target"} defaultLanguage={"fra_Latn"} onChange={x => setTargetLanguage(x.target.value)} />
         </div>
 
         <div className='textbox-container'>
